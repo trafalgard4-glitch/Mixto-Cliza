@@ -5,12 +5,14 @@ import { auth, db } from "./firebase/config";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Rastreo from "./pages/Rastreo";
+import ChoferApp from "./pages/ChoferApp";
 
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
 
   const esRastreo = window.location.pathname === "/rastreo";
+const esChofer = window.location.pathname === "/chofer";
 
   useEffect(() => {
     if (esRastreo) {
@@ -35,6 +37,7 @@ function App() {
   }, [esRastreo]);
 
   if (esRastreo) return <Rastreo />;
+if (esChofer) return <ChoferApp />;
 
   if (cargando) {
     return (
