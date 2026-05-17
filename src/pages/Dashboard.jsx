@@ -2,6 +2,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config";
 import Encomiendas from "./Encomiendas";
 import RadioTaxi from "./RadioTaxi";
+import Administracion from "./Administracion";
 import { useState } from "react";
 
 const ROLES = {
@@ -62,9 +63,7 @@ export default function Dashboard({ usuario }) {
       <main>
         {seccion === "encomiendas" && <Encomiendas />}
         {seccion === "radio taxi" && <RadioTaxi />}
-        {seccion === "administración" && (
-          <div className="p-6 text-gray-400">Módulo Administración — próximamente</div>
-        )}
+        {seccion === "administración" && <Administracion />}
       </main>
     </div>
   );

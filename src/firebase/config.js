@@ -4,14 +4,14 @@ import { getDatabase } from "firebase/database";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAyYJKiglDql2661RsmR5g-ifTHKL5H7cY",
-  authDomain: "mixto-cliza.firebaseapp.com",
-  databaseURL: "https://mixto-cliza-default-rtdb.firebaseio.com",
-  projectId: "mixto-cliza",
-  storageBucket: "mixto-cliza.firebasestorage.app",
-  messagingSenderId: "999027171156",
-  appId: "1:999027171156:web:c9f1b8c7bfdb1c23d2b2c1",
-  measurementId: "G-WYT1F3QX20"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
