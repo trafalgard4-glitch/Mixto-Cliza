@@ -167,10 +167,7 @@ export default function Encomiendas() {
                 {enc.estado !== "ENTREGADO" && (
                   <select
                     value={enc.estado}
-                    onChange={async (e) => {
-  await actualizarEstado(enc.id, e.target.value);
-  cargarDatos();
-}}
+                    onChange={async (e) => { await actualizarEstado(enc.id, e.target.value, enc.choferAsignado?.id); cargarDatos(); }}
                     className="text-xs border rounded-lg px-2 py-1 focus:outline-none"
                   >
                     <option value="EN_OFICINA">En oficina</option>

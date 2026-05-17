@@ -1,14 +1,9 @@
 import { db } from "./config";
 import {
-  collection,
-  addDoc,
-  getDocs,
-  updateDoc,
-  doc,
-  query,
-  orderBy,
-  serverTimestamp,
+  collection, addDoc, getDocs, updateDoc,
+  doc, query, orderBy, serverTimestamp,
 } from "firebase/firestore";
+import { actualizarEstadoChofer } from "./choferes";
 
 export async function registrarEncomienda(datos) {
   const ref = collection(db, "encomiendas");
@@ -30,10 +25,20 @@ export async function obtenerEncomiendas() {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function actualizarEstado(id, estado) {
+export async function actualizarEstado(id, estado, choferAsignadoId) {
   const ref = doc(db, "encomiendas", id);
   await updateDoc(ref, {
     estado,
     ...(estado === "ENTREGADO" ? { fechaEntrega: serverTimestamp() } : {}),
   });
+
+  // Si sale en ruta → chofer pasa a NO_DISPONIBLE
+  if (estado === "EN_RUTA" && choferAsignadoId) {
+    await actualizarEstadoChofer(choferAsignadoId, "NO_DISPONIBLE");
+  }
+
+  // Si se entrega → chofer vuelve a estar DISPONIBLE al final de la cola
+  if (estado === "ENTREGADO" && choferAsignadoId) {
+    await actualizarEstadoChofer(choferAsignadoId, "DISPONIBLE");
+  }
 }

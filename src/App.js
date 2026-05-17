@@ -4,12 +4,19 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase/config";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import Rastreo from "./pages/Rastreo";
 
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
 
+  const esRastreo = window.location.pathname === "/rastreo";
+
   useEffect(() => {
+    if (esRastreo) {
+      setCargando(false);
+      return;
+    }
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const docRef = doc(db, "usuarios", user.uid);
@@ -25,7 +32,9 @@ function App() {
       setCargando(false);
     });
     return () => unsub();
-  }, []);
+  }, [esRastreo]);
+
+  if (esRastreo) return <Rastreo />;
 
   if (cargando) {
     return (
