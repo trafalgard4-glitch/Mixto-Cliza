@@ -25,6 +25,8 @@ export function escucharTaxis(callback) {
   onValue(r, (snap) => {
     const data = snap.val() || {};
     callback(data);
+  }, (error) => {
+    console.error("Error escuchando taxis:", error);
   });
   return () => off(r);
 }
@@ -37,6 +39,18 @@ export async function registrarViaje(datos) {
     estado: "EN_CURSO",
     fecha: serverTimestamp(),
   });
+
+  // Notifica al chofer en Realtime DB
+  const choferRef = ref(rtdb, `notificaciones/${datos.choferId}`);
+  await set(choferRef, {
+    viajeId: docRef.id,
+    direccion: datos.direccionCliente,
+    lat: datos.latCliente,
+    lng: datos.lngCliente,
+    estado: "NUEVO_VIAJE",
+    timestamp: Date.now(),
+  });
+
   return docRef.id;
 }
 
@@ -50,7 +64,10 @@ export async function obtenerViajes() {
 // Finaliza un viaje
 export async function finalizarViaje(id) {
   const r = doc(db, "viajes", id);
-  await updateDoc(r, { estado: "COMPLETADO" });
+  await updateDoc(r, { 
+    estado: "COMPLETADO",
+    fechaCompletado: serverTimestamp()
+  });
 }
 
 // Encuentra el chofer libre más cercano
