@@ -5,7 +5,13 @@ import {
   obtenerMovimientosCaja, registrarMovimientoCaja
 } from "../firebase/administracion";
 
-// ← ListaSocios está FUERA del componente principal, eso arregla el bug del input
+const TABS = ["interprovincial", "radiomovil", "caja"];
+
+const inputClass = "w-full px-3 py-2 rounded-xl text-sm outline-none transition";
+const inputStyle = { backgroundColor: "#f3f4f6", border: "1.5px solid #e5e7eb", color: "#111827" };
+const inputFocus = (e) => e.target.style.borderColor = "#157f3c";
+const inputBlur = (e) => e.target.style.borderColor = "#e5e7eb";
+
 function ListaSocios({
   lista, linea, cargando,
   mostrarFormSocio, setMostrarFormSocio,
@@ -13,155 +19,121 @@ function ListaSocios({
   guardando, handleAgregarSocio,
   verCuotas, setVerCuotas,
   socioSeleccionado, setSocioSeleccionado,
-  cuotasSocio, formCuota, setFormCuota,
-  handleRegistrarCuota, handleVerCuotas, handleEstadoSocio,
+  cuotasSocio,
+  formCuota, setFormCuota,
+  handleRegistrarCuota,
+  handleVerCuotas, handleEstadoSocio,
 }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <p className="text-sm text-gray-500">{lista.length} socios registrados</p>
+        <p className="text-sm" style={{ color: "#6b7280" }}>{lista.length} socios registrados</p>
         <button
           onClick={() => setMostrarFormSocio(!mostrarFormSocio)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+          className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+          style={{ backgroundColor: mostrarFormSocio ? "#6b7280" : "#157f3c" }}
         >
-          {mostrarFormSocio ? "Cancelar" : "+ Agregar socio"}
+          {mostrarFormSocio ? "✕ Cancelar" : "+ Agregar socio"}
         </button>
       </div>
 
       {mostrarFormSocio && (
-        <div className="bg-white rounded-xl shadow p-6 mb-4">
-          <h3 className="font-semibold text-gray-700 mb-1">Nuevo socio</h3>
-          <p className="text-xs text-gray-400 mb-4">
+        <div className="rounded-2xl p-6 mb-4 shadow-sm"
+          style={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}>
+          <h3 className="font-semibold mb-1" style={{ color: "#111827" }}>Nuevo socio</h3>
+          <p className="text-xs mb-4" style={{ color: "#6b7280" }}>
             {linea === "interprovincial"
-              ? "Línea Cliza — Cochabamba · Encomiendas"
-              : "Radio Móvil · Servicio dentro de Cliza"}
+              ? "🚗 Línea Cliza — Cochabamba · Encomiendas"
+              : "📡 Radio Móvil · Servicio dentro de Cliza"}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs text-gray-500">Nombre completo *</label>
-              <input
-                value={formSocio.nombre}
-                onChange={(e) => setFormSocio({ ...formSocio, nombre: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="Juan Mamani"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500">CI *</label>
-              <input
-                value={formSocio.ci}
-                onChange={(e) => setFormSocio({ ...formSocio, ci: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="4521876"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500">Placa *</label>
-              <input
-                value={formSocio.placa}
-                onChange={(e) => setFormSocio({ ...formSocio, placa: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="2341-CBB"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500">Teléfono</label>
-              <input
-                value={formSocio.telefono}
-                onChange={(e) => setFormSocio({ ...formSocio, telefono: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="76543210"
-              />
-            </div>
+            {[
+              { key: "nombre", label: "Nombre completo *", placeholder: "Juan Mamani" },
+              { key: "ci", label: "CI *", placeholder: "4521876" },
+              { key: "placa", label: "Placa *", placeholder: "2341-CBB" },
+              { key: "telefono", label: "Teléfono", placeholder: "76543210" },
+            ].map((f) => (
+              <div key={f.key}>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  {f.label}
+                </label>
+                <input
+                  value={formSocio[f.key]}
+                  onChange={(e) => setFormSocio({ ...formSocio, [f.key]: e.target.value })}
+                  placeholder={f.placeholder}
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur}
+                />
+              </div>
+            ))}
           </div>
-          <button
-            onClick={handleAgregarSocio}
-            disabled={guardando}
-            className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50"
-          >
-            {guardando ? "Guardando..." : "Registrar socio"}
+          <button onClick={handleAgregarSocio} disabled={guardando}
+            className="mt-5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+            style={{ backgroundColor: guardando ? "#86b89a" : "#157f3c" }}>
+            {guardando ? "Guardando..." : "✓ Registrar socio"}
           </button>
         </div>
       )}
 
       {verCuotas && socioSeleccionado && (
-        <div className="bg-white rounded-xl shadow p-6 mb-4">
+        <div className="rounded-2xl p-6 mb-4 shadow-sm"
+          style={{ backgroundColor: "#ffffff", border: "1.5px solid #86efac" }}>
           <div className="flex justify-between items-center mb-4">
             <div>
-              <p className="font-bold text-gray-800">{socioSeleccionado.nombre}</p>
-              <p className="text-xs text-gray-400">Placa: {socioSeleccionado.placa}</p>
+              <p className="font-bold" style={{ color: "#111827" }}>{socioSeleccionado.nombre}</p>
+              <p className="text-xs" style={{ color: "#6b7280" }}>Placa: {socioSeleccionado.placa}</p>
             </div>
-            <button
-              onClick={() => { setVerCuotas(false); setSocioSeleccionado(null); }}
-              className="text-sm text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={() => { setVerCuotas(false); setSocioSeleccionado(null); }}
+              className="text-sm px-3 py-1 rounded-lg"
+              style={{ color: "#6b7280", backgroundColor: "#f3f4f6" }}>
               ✕ Cerrar
             </button>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="text-xs text-gray-500">Mes</label>
-              <input
-                type="date"
-                value={formCuota.mes}
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>Mes</label>
+              <input type="month" value={formCuota.mes}
                 onChange={(e) => setFormCuota({ ...formCuota, mes: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
+                className={inputClass} style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Motivo</label>
-              <input
-                value={formCuota.motivo || ""}
-                onChange={(e) => setFormCuota({ ...formCuota, motivo: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="Ej: Cuota mensual, multa, etc."
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500">Monto (Bs.)</label>
-              <input
-                type="number"
-                value={formCuota.monto}
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>Monto (Bs.)</label>
+              <input type="number" value={formCuota.monto}
                 onChange={(e) => setFormCuota({ ...formCuota, monto: e.target.value })}
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="50"
-              />
+                placeholder="50" className={inputClass} style={inputStyle}
+                onFocus={inputFocus} onBlur={inputBlur} />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Estado</label>
-              <select
-                value={formCuota.pagado}
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>Estado</label>
+              <select value={formCuota.pagado}
                 onChange={(e) => setFormCuota({ ...formCuota, pagado: e.target.value === "true" })}
-                className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              >
+                className={inputClass} style={inputStyle}>
                 <option value="true">Pagado</option>
                 <option value="false">Pendiente</option>
               </select>
             </div>
           </div>
-          <button
-            onClick={handleRegistrarCuota}
-            disabled={guardando}
-            className="bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50 mb-4"
-          >
-            {guardando ? "Guardando..." : "Registrar cuota"}
+          <button onClick={handleRegistrarCuota} disabled={guardando}
+            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white mb-4"
+            style={{ backgroundColor: guardando ? "#86b89a" : "#157f3c" }}>
+            {guardando ? "Guardando..." : "✓ Registrar cuota"}
           </button>
+
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {cuotasSocio.length === 0 ? (
-              <p className="text-gray-400 text-sm">Sin cuotas registradas</p>
+              <p className="text-sm" style={{ color: "#9ca3af" }}>Sin cuotas registradas</p>
             ) : cuotasSocio.map((cuota) => (
-              <div key={cuota.id} className="flex justify-between items-center border rounded-lg px-4 py-2">
-                <div>
-                    <p className="text-sm text-gray-700">{cuota.mes}</p>
-                    {cuota.motivo && (
-                      <p className="text-xs text-gray-400">{cuota.motivo}</p>
-                    )}
-                  </div>
+              <div key={cuota.id} className="flex justify-between items-center px-4 py-2.5 rounded-xl"
+                style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+                <p className="text-sm font-medium" style={{ color: "#374151" }}>{cuota.mes}</p>
                 <div className="flex items-center gap-3">
-                  <p className="text-sm font-medium">Bs. {cuota.monto}</p>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    cuota.pagado ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                  }`}>
+                  <p className="text-sm font-bold" style={{ color: "#111827" }}>Bs. {cuota.monto}</p>
+                  <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+                    style={{
+                      backgroundColor: cuota.pagado ? "#dcfce7" : "#fef2f2",
+                      color: cuota.pagado ? "#166534" : "#dc2626",
+                    }}>
                     {cuota.pagado ? "✅ Pagado" : "❌ Pendiente"}
                   </span>
                 </div>
@@ -172,43 +144,49 @@ function ListaSocios({
       )}
 
       {cargando ? (
-        <p className="text-gray-400 text-sm">Cargando socios...</p>
+        <p className="text-sm" style={{ color: "#9ca3af" }}>Cargando socios...</p>
       ) : lista.length === 0 ? (
-        <p className="text-gray-400 text-sm">No hay socios registrados en esta línea.</p>
+        <div className="text-center py-16 rounded-2xl"
+          style={{ backgroundColor: "#ffffff", border: "1px dashed #d1d5db" }}>
+          <p className="text-3xl mb-2">👥</p>
+          <p className="text-sm" style={{ color: "#9ca3af" }}>No hay socios en esta línea aún</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {lista.map((socio) => (
             <div key={socio.id}
-              className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div>
-                <p className="font-semibold text-gray-800">{socio.nombre}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  CI: {socio.ci} · Placa: {socio.placa}
-                  {socio.telefono ? ` · Tel: ${socio.telefono}` : ""}
-                </p>
-                <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-1 ${
-                  socio.estado === "activo"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-                }`}>
-                  {socio.estado}
-                </span>
+              className="rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:shadow-md transition-all"
+              style={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                  style={{ backgroundColor: "#f0fdf4" }}>
+                  🚗
+                </div>
+                <div>
+                  <p className="font-semibold" style={{ color: "#111827" }}>{socio.nombre}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
+                    CI: {socio.ci} · Placa: {socio.placa}
+                    {socio.telefono ? ` · Tel: ${socio.telefono}` : ""}
+                  </p>
+                  <span className="inline-block text-xs px-2 py-0.5 rounded-full mt-1 font-medium"
+                    style={{
+                      backgroundColor: socio.estado === "activo" ? "#dcfce7" : "#fef2f2",
+                      color: socio.estado === "activo" ? "#166534" : "#dc2626",
+                    }}>
+                    {socio.estado === "activo" ? "● Activo" : "● Suspendido"}
+                  </span>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleVerCuotas(socio)}
-                  className="text-xs bg-yellow-500 text-white px-3 py-1.5 rounded-lg hover:bg-yellow-600 transition"
-                >
+              <div className="flex gap-2 flex-shrink-0">
+                <button onClick={() => handleVerCuotas(socio)}
+                  className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white"
+                  style={{ backgroundColor: "#f59e0b" }}>
                   💰 Cuotas
                 </button>
                 <button
                   onClick={() => handleEstadoSocio(socio.id, socio.estado === "activo" ? "suspendido" : "activo")}
-                  className={`text-xs px-3 py-1.5 rounded-lg transition text-white ${
-                    socio.estado === "activo"
-                      ? "bg-red-500 hover:bg-red-600"
-                      : "bg-green-500 hover:bg-green-600"
-                  }`}
-                >
+                  className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white"
+                  style={{ backgroundColor: socio.estado === "activo" ? "#dc2626" : "#157f3c" }}>
                   {socio.estado === "activo" ? "Suspender" : "Reactivar"}
                 </button>
               </div>
@@ -235,14 +213,8 @@ export default function Administracion() {
   const [formSocio, setFormSocio] = useState({
     nombre: "", ci: "", placa: "", telefono: "", linea: "interprovincial",
   });
-
-  const [formCaja, setFormCaja] = useState({
-    tipo: "ingreso", descripcion: "", monto: "",
-  });
-
-  const [formCuota, setFormCuota] = useState({
-    mes: "", monto: "", pagado: true,
-  });
+  const [formCaja, setFormCaja] = useState({ tipo: "ingreso", descripcion: "", monto: "" });
+  const [formCuota, setFormCuota] = useState({ mes: "", monto: "", pagado: true });
 
   useEffect(() => { cargarDatos(); }, []);
 
@@ -267,14 +239,9 @@ export default function Administracion() {
   const sociosInterprovincial = socios.filter((s) => s.linea === "interprovincial");
   const sociosRadiomovil = socios.filter((s) => s.linea === "radiomovil");
 
-  const totalCaja = caja.reduce((acc, m) => {
-    return m.tipo === "ingreso" ? acc + m.monto : acc - m.monto;
-  }, 0);
-
   const handleAgregarSocio = async () => {
     if (!formSocio.nombre || !formSocio.ci || !formSocio.placa) {
-      alert("Nombre, CI y placa son obligatorios");
-      return;
+      alert("Nombre, CI y placa son obligatorios"); return;
     }
     setGuardando(true);
     await agregarSocio({ ...formSocio, estado: "activo" });
@@ -297,10 +264,7 @@ export default function Administracion() {
   };
 
   const handleRegistrarCuota = async () => {
-    if (!formCuota.mes || !formCuota.monto) {
-      alert("Mes y monto son obligatorios");
-      return;
-    }
+    if (!formCuota.mes || !formCuota.monto) { alert("Mes y monto son obligatorios"); return; }
     setGuardando(true);
     await registrarCuota({
       socioId: socioSeleccionado.id,
@@ -316,10 +280,7 @@ export default function Administracion() {
   };
 
   const handleMovimientoCaja = async () => {
-    if (!formCaja.descripcion || !formCaja.monto) {
-      alert("Descripción y monto son obligatorios");
-      return;
-    }
+    if (!formCaja.descripcion || !formCaja.monto) { alert("Descripción y monto son obligatorios"); return; }
     setGuardando(true);
     await registrarMovimientoCaja({ ...formCaja, monto: Number(formCaja.monto) });
     setFormCaja({ tipo: "ingreso", descripcion: "", monto: "" });
@@ -328,152 +289,184 @@ export default function Administracion() {
     cargarDatos();
   };
 
-  const propsSocios = {
-    cargando, mostrarFormSocio, setMostrarFormSocio,
-    formSocio, setFormSocio, guardando, handleAgregarSocio,
-    verCuotas, setVerCuotas, socioSeleccionado, setSocioSeleccionado,
-    cuotasSocio, formCuota, setFormCuota,
-    handleRegistrarCuota, handleVerCuotas, handleEstadoSocio,
-  };
+  const totalCaja = caja.reduce((acc, m) => m.tipo === "ingreso" ? acc + m.monto : acc - m.monto, 0);
+
+  const tabConfig = [
+    { id: "interprovincial", label: "Cliza–Cbba", icono: "🚗", count: sociosInterprovincial.length },
+    { id: "radiomovil", label: "Radio Móvil", icono: "📡", count: sociosRadiomovil.length },
+    { id: "caja", label: "Caja", icono: "🏦", count: null },
+  ];
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Administración</h2>
+    <div className="p-4 md:p-6 max-w-5xl mx-auto">
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-2xl font-bold text-blue-600">{sociosInterprovincial.length}</p>
-          <p className="text-xs text-gray-400 mt-1">Socios Cliza–Cbba</p>
-        </div>
-        <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-2xl font-bold text-purple-600">{sociosRadiomovil.length}</p>
-          <p className="text-xs text-gray-400 mt-1">Socios Radio Móvil</p>
-        </div>
-        <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className="text-2xl font-bold text-gray-700">
-            {socios.filter((s) => s.estado === "activo").length}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Total activos</p>
-        </div>
-        <div className="bg-white rounded-xl shadow p-4 text-center">
-          <p className={`text-2xl font-bold ${totalCaja >= 0 ? "text-green-600" : "text-red-500"}`}>
-            Bs. {totalCaja}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Saldo en caja</p>
-        </div>
+      <div className="mb-6">
+        <h2 className="text-xl font-bold" style={{ color: "#111827" }}>👥 Administración</h2>
+        <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>Gestión de socios y finanzas</p>
       </div>
 
-      <div className="flex gap-2 mb-4">
-        {["interprovincial", "radiomovil", "caja"].map((t) => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`text-sm px-4 py-2 rounded-lg transition font-medium ${
-              tab === t ? "bg-blue-600 text-white" : "bg-white text-gray-500 hover:bg-gray-100 shadow"
-            }`}>
-            {t === "interprovincial" ? "🚗 Cliza–Cbba"
-              : t === "radiomovil" ? "📡 Radio Móvil"
-              : "🏦 Caja"}
+      {/* Resumen */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: "Socios Cliza–Cbba", valor: sociosInterprovincial.length, color: "#157f3c", bg: "#f0fdf4", border: "#86efac" },
+          { label: "Socios Radio Móvil", valor: sociosRadiomovil.length, color: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd" },
+          { label: "Total activos", valor: socios.filter(s => s.estado === "activo").length, color: "#111827", bg: "#f9fafb", border: "#e5e7eb" },
+          { label: "Saldo en caja", valor: `Bs. ${totalCaja}`, color: totalCaja >= 0 ? "#157f3c" : "#dc2626", bg: totalCaja >= 0 ? "#f0fdf4" : "#fef2f2", border: totalCaja >= 0 ? "#86efac" : "#fca5a5" },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-2xl p-4 text-center"
+            style={{ backgroundColor: stat.bg, border: `1px solid ${stat.border}` }}>
+            <p className="text-xl font-black" style={{ color: stat.color }}>{stat.valor}</p>
+            <p className="text-xs mt-1" style={{ color: "#6b7280" }}>{stat.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-5">
+        {tabConfig.map((t) => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: tab === t.id ? "#157f3c" : "#ffffff",
+              color: tab === t.id ? "#ffffff" : "#374151",
+              border: tab === t.id ? "none" : "1px solid #e5e7eb",
+            }}>
+            {t.icono} {t.label}
+            {t.count !== null && (
+              <span className="text-xs px-1.5 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: tab === t.id ? "rgba(255,255,255,0.25)" : "#f3f4f6",
+                  color: tab === t.id ? "#ffffff" : "#6b7280",
+                }}>
+                {t.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       {tab === "interprovincial" && (
-        <ListaSocios lista={sociosInterprovincial} linea="interprovincial" {...propsSocios} />
+        <ListaSocios lista={sociosInterprovincial} linea="interprovincial"
+          cargando={cargando}
+          mostrarFormSocio={mostrarFormSocio} setMostrarFormSocio={setMostrarFormSocio}
+          formSocio={formSocio} setFormSocio={setFormSocio}
+          guardando={guardando} handleAgregarSocio={handleAgregarSocio}
+          verCuotas={verCuotas} setVerCuotas={setVerCuotas}
+          socioSeleccionado={socioSeleccionado} setSocioSeleccionado={setSocioSeleccionado}
+          cuotasSocio={cuotasSocio}
+          formCuota={formCuota} setFormCuota={setFormCuota}
+          handleRegistrarCuota={handleRegistrarCuota}
+          handleVerCuotas={handleVerCuotas} handleEstadoSocio={handleEstadoSocio}
+        />
       )}
       {tab === "radiomovil" && (
-        <ListaSocios lista={sociosRadiomovil} linea="radiomovil" {...propsSocios} />
+        <ListaSocios lista={sociosRadiomovil} linea="radiomovil"
+          cargando={cargando}
+          mostrarFormSocio={mostrarFormSocio} setMostrarFormSocio={setMostrarFormSocio}
+          formSocio={formSocio} setFormSocio={setFormSocio}
+          guardando={guardando} handleAgregarSocio={handleAgregarSocio}
+          verCuotas={verCuotas} setVerCuotas={setVerCuotas}
+          socioSeleccionado={socioSeleccionado} setSocioSeleccionado={setSocioSeleccionado}
+          cuotasSocio={cuotasSocio}
+          formCuota={formCuota} setFormCuota={setFormCuota}
+          handleRegistrarCuota={handleRegistrarCuota}
+          handleVerCuotas={handleVerCuotas} handleEstadoSocio={handleEstadoSocio}
+        />
       )}
 
       {tab === "caja" && (
         <div>
           <div className="flex justify-between items-center mb-4">
             <div>
-              <p className={`text-2xl font-bold ${totalCaja >= 0 ? "text-green-600" : "text-red-500"}`}>
+              <p className="text-2xl font-black"
+                style={{ color: totalCaja >= 0 ? "#157f3c" : "#dc2626" }}>
                 Bs. {totalCaja}
               </p>
-              <p className="text-xs text-gray-400">Saldo actual</p>
+              <p className="text-xs" style={{ color: "#6b7280" }}>Saldo actual</p>
             </div>
             <button onClick={() => setMostrarFormCaja(!mostrarFormCaja)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
-              {mostrarFormCaja ? "Cancelar" : "+ Nuevo movimiento"}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ backgroundColor: mostrarFormCaja ? "#6b7280" : "#157f3c" }}>
+              {mostrarFormCaja ? "✕ Cancelar" : "+ Nuevo movimiento"}
             </button>
           </div>
 
           {mostrarFormCaja && (
-            <div className="bg-white rounded-xl shadow p-6 mb-4">
+            <div className="rounded-2xl p-6 mb-4 shadow-sm"
+              style={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <div>
-                  <label className="text-xs text-gray-500">Fecha</label>
-                  <input
-                    type="date"
-                    value={formCaja.fecha || ""}
-                    onChange={(e) => setFormCaja({ ...formCaja, fecha: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                </div>
-                  <label className="text-xs text-gray-500">Tipo</label>
+                  <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>Tipo</label>
                   <select value={formCaja.tipo}
                     onChange={(e) => setFormCaja({ ...formCaja, tipo: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    className={inputClass} style={inputStyle}>
                     <option value="ingreso">Ingreso</option>
                     <option value="egreso">Egreso</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Descripción</label>
+                  <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>Descripción</label>
                   <input value={formCaja.descripcion}
                     onChange={(e) => setFormCaja({ ...formCaja, descripcion: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="Ej: Cuotas de mayo" />
+                    placeholder="Ej: Cuotas de mayo"
+                    className={inputClass} style={inputStyle}
+                    onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500">Monto (Bs.)</label>
+                  <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>Monto (Bs.)</label>
                   <input type="number" value={formCaja.monto}
                     onChange={(e) => setFormCaja({ ...formCaja, monto: e.target.value })}
-                    className="w-full border rounded-lg px-3 py-2 mt-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="100" />
+                    placeholder="100"
+                    className={inputClass} style={inputStyle}
+                    onFocus={inputFocus} onBlur={inputBlur} />
                 </div>
               </div>
               <button onClick={handleMovimientoCaja} disabled={guardando}
-                className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50">
-                {guardando ? "Guardando..." : "Registrar movimiento"}
+                className="mt-5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ backgroundColor: guardando ? "#86b89a" : "#157f3c" }}>
+                {guardando ? "Guardando..." : "✓ Registrar movimiento"}
               </button>
             </div>
           )}
 
-          <div className="space-y-2">
-            {caja.length === 0 ? (
-              <p className="text-gray-400 text-sm">Sin movimientos registrados.</p>
-            ) : caja.map((mov) => (
-              <div key={mov.id}
-                className="bg-white rounded-xl shadow p-4 flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-700">{mov.descripcion}</p>
-                  {mov.fecha && (
-                    <p className="text-xs text-gray-400">
-                      {typeof mov.fecha === "string"
-                        ? mov.fecha
-                        : mov.fecha?.toDate?.()?.toLocaleDateString("es-BO") || ""}
+          {caja.length === 0 ? (
+            <div className="text-center py-16 rounded-2xl"
+              style={{ backgroundColor: "#ffffff", border: "1px dashed #d1d5db" }}>
+              <p className="text-3xl mb-2">🏦</p>
+              <p className="text-sm" style={{ color: "#9ca3af" }}>Sin movimientos registrados</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {caja.map((mov) => (
+                <div key={mov.id}
+                  className="rounded-2xl p-4 flex justify-between items-center"
+                  style={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: mov.tipo === "ingreso" ? "#f0fdf4" : "#fef2f2" }}>
+                      {mov.tipo === "ingreso" ? "⬆️" : "⬇️"}
+                    </div>
+                    <p className="text-sm font-medium" style={{ color: "#111827" }}>
+                      {mov.descripcion}
                     </p>
-                  )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-black"
+                      style={{ color: mov.tipo === "ingreso" ? "#157f3c" : "#dc2626" }}>
+                      {mov.tipo === "ingreso" ? "+" : "-"} Bs. {mov.monto}
+                    </span>
+                    <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+                      style={{
+                        backgroundColor: mov.tipo === "ingreso" ? "#dcfce7" : "#fef2f2",
+                        color: mov.tipo === "ingreso" ? "#166534" : "#dc2626",
+                      }}>
+                      {mov.tipo}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm font-bold ${
-                    mov.tipo === "ingreso" ? "text-green-600" : "text-red-500"
-                  }`}>
-                    {mov.tipo === "ingreso" ? "+" : "-"} Bs. {mov.monto}
-                  </span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    mov.tipo === "ingreso"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }`}>
-                    {mov.tipo}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
