@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   obtenerSocios, agregarSocio, actualizarSocio,
-  registrarCuota, obtenerCuotas,
+  obtenerMovimientosSocio, registrarMovimientoSocio,
   obtenerMovimientosCaja, registrarMovimientoCaja
 } from "../firebase/administracion";
 
@@ -24,6 +24,16 @@ function ListaSocios({
   handleRegistrarCuota,
   handleVerCuotas, handleEstadoSocio,
 }) {
+  const [busqueda, setBusqueda] = useState("");
+
+  const listaFiltrada = lista.filter((s) => {
+    const q = busqueda.toLowerCase();
+    return (
+      s.nombre?.toLowerCase().includes(q) ||
+      s.ci?.toLowerCase().includes(q) ||
+      s.placa?.toLowerCase().includes(q)
+    );
+  });
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -46,29 +56,295 @@ function ListaSocios({
               ? "🚗 Línea Cliza — Cochabamba · Encomiendas"
               : "📡 Radio Móvil · Servicio dentro de Cliza"}
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { key: "nombre", label: "Nombre completo *", placeholder: "Juan Mamani" },
-              { key: "ci", label: "CI *", placeholder: "4521876" },
-              { key: "placa", label: "Placa *", placeholder: "2341-CBB" },
-              { key: "telefono", label: "Teléfono", placeholder: "76543210" },
-            ].map((f) => (
-              <div key={f.key}>
+          {/* SECCIÓN 1: Datos personales */}
+          <div className="rounded-2xl p-4 mb-4"
+            style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            <p className="text-xs font-bold mb-3 flex items-center gap-2"
+              style={{ color: "#157f3c" }}>
+              👤 Datos personales
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
                 <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
-                  {f.label}
+                  Nombre completo *
                 </label>
-                <input
-                  value={formSocio[f.key]}
-                  onChange={(e) => setFormSocio({ ...formSocio, [f.key]: e.target.value })}
-                  placeholder={f.placeholder}
+                <input value={formSocio.nombre}
+                  onChange={(e) => setFormSocio({ ...formSocio, nombre: e.target.value })}
+                  placeholder="Juan Mamani Flores"
                   className={inputClass} style={inputStyle}
-                  onFocus={inputFocus} onBlur={inputBlur}
-                />
+                  onFocus={inputFocus} onBlur={inputBlur} />
               </div>
-            ))}
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Fecha de nacimiento
+                </label>
+                <input type="date" value={formSocio.fechaNacimiento}
+                  onChange={(e) => setFormSocio({ ...formSocio, fechaNacimiento: e.target.value })}
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  CI *
+                </label>
+                <input value={formSocio.ci}
+                  onChange={(e) => setFormSocio({ ...formSocio, ci: e.target.value })}
+                  placeholder="4521876"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Expedición CI
+                </label>
+                <select value={formSocio.ciExpedicion}
+                  onChange={(e) => setFormSocio({ ...formSocio, ciExpedicion: e.target.value })}
+                  className={inputClass} style={inputStyle}>
+                  {["CB","LP","SC","OR","PT","TJ","CH","BE","PD"].map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Teléfono *
+                </label>
+                <input value={formSocio.telefono}
+                  onChange={(e) => setFormSocio({ ...formSocio, telefono: e.target.value })}
+                  placeholder="76543210"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Teléfono de emergencia
+                </label>
+                <input value={formSocio.telefonoEmergencia}
+                  onChange={(e) => setFormSocio({ ...formSocio, telefonoEmergencia: e.target.value })}
+                  placeholder="71234567"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Dirección
+                </label>
+                <input value={formSocio.direccion}
+                  onChange={(e) => setFormSocio({ ...formSocio, direccion: e.target.value })}
+                  placeholder="Calle Sucre #123, Cliza"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+            </div>
           </div>
+
+          {/* SECCIÓN 2: Licencia de conducir */}
+          <div className="rounded-2xl p-4 mb-4"
+            style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            <p className="text-xs font-bold mb-3 flex items-center gap-2"
+              style={{ color: "#157f3c" }}>
+              🪪 Licencia de conducir
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Número de licencia
+                </label>
+                <input value={formSocio.licenciaNumero}
+                  onChange={(e) => setFormSocio({ ...formSocio, licenciaNumero: e.target.value })}
+                  placeholder="LIC-001234"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Clase
+                </label>
+                <select value={formSocio.licenciaClase}
+                  onChange={(e) => setFormSocio({ ...formSocio, licenciaClase: e.target.value })}
+                  className={inputClass} style={inputStyle}>
+                  {["A","B","C","D","E"].map(c => (
+                    <option key={c} value={c}>Clase {c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Categoría
+                </label>
+                <select value={formSocio.licenciaCategoria}
+                  onChange={(e) => setFormSocio({ ...formSocio, licenciaCategoria: e.target.value })}
+                  className={inputClass} style={inputStyle}>
+                  <option value="profesional">Profesional</option>
+                  <option value="particular">Particular</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Fecha de emisión
+                </label>
+                <input type="date" value={formSocio.licenciaEmision}
+                  onChange={(e) => setFormSocio({ ...formSocio, licenciaEmision: e.target.value })}
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Fecha de vencimiento
+                </label>
+                <input type="date" value={formSocio.licenciaVencimiento}
+                  onChange={(e) => setFormSocio({ ...formSocio, licenciaVencimiento: e.target.value })}
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+            </div>
+          </div>
+
+          {/* SECCIÓN 3: Ficha técnica del vehículo */}
+          <div className="rounded-2xl p-4 mb-4"
+            style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            <p className="text-xs font-bold mb-3 flex items-center gap-2"
+              style={{ color: "#157f3c" }}>
+              🚗 Ficha técnica del vehículo
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Placa *
+                </label>
+                <input value={formSocio.placa}
+                  onChange={(e) => setFormSocio({ ...formSocio, placa: e.target.value.toUpperCase() })}
+                  placeholder="2341-CBB"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  VIN
+                </label>
+                <input value={formSocio.vin}
+                  onChange={(e) => setFormSocio({ ...formSocio, vin: e.target.value.toUpperCase() })}
+                  placeholder="1HGBH41JXMN109186"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Marca
+                </label>
+                <input value={formSocio.marca}
+                  onChange={(e) => setFormSocio({ ...formSocio, marca: e.target.value })}
+                  placeholder="Toyota"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Modelo
+                </label>
+                <input value={formSocio.modelo}
+                  onChange={(e) => setFormSocio({ ...formSocio, modelo: e.target.value })}
+                  placeholder="Corolla"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Año
+                </label>
+                <input type="number" value={formSocio.anio}
+                  onChange={(e) => setFormSocio({ ...formSocio, anio: e.target.value })}
+                  placeholder="2018"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Color
+                </label>
+                <input value={formSocio.color}
+                  onChange={(e) => setFormSocio({ ...formSocio, color: e.target.value })}
+                  placeholder="Blanco"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Tipo de combustible
+                </label>
+                <select value={formSocio.tipoCombustible}
+                  onChange={(e) => setFormSocio({ ...formSocio, tipoCombustible: e.target.value })}
+                  className={inputClass} style={inputStyle}>
+                  <option value="gasolina">Gasolina</option>
+                  <option value="diesel">Diésel</option>
+                  <option value="gnv">GNV</option>
+                  <option value="hibrido">Híbrido</option>
+                  <option value="electrico">Eléctrico</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Número de motor
+                </label>
+                <input value={formSocio.numeroMotor}
+                  onChange={(e) => setFormSocio({ ...formSocio, numeroMotor: e.target.value })}
+                  placeholder="ABC123456"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Número de chasis
+                </label>
+                <input value={formSocio.numeroChassis}
+                  onChange={(e) => setFormSocio({ ...formSocio, numeroChassis: e.target.value })}
+                  placeholder="XYZ789012"
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+            </div>
+          </div>
+
+          {/* SECCIÓN 4: Documentación legal */}
+          <div className="rounded-2xl p-4 mb-5"
+            style={{ backgroundColor: "#f9fafb", border: "1px solid #e5e7eb" }}>
+            <p className="text-xs font-bold mb-3 flex items-center gap-2"
+              style={{ color: "#157f3c" }}>
+              📋 Documentación legal del vehículo
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Vencimiento SOAT
+                </label>
+                <input type="date" value={formSocio.vencimientoSOAT}
+                  onChange={(e) => setFormSocio({ ...formSocio, vencimientoSOAT: e.target.value })}
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Vencimiento revisión técnica
+                </label>
+                <input type="date" value={formSocio.vencimientoRevisionTecnica}
+                  onChange={(e) => setFormSocio({ ...formSocio, vencimientoRevisionTecnica: e.target.value })}
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1.5 block" style={{ color: "#374151" }}>
+                  Vencimiento matrícula
+                </label>
+                <input type="date" value={formSocio.vencimientoMatricula}
+                  onChange={(e) => setFormSocio({ ...formSocio, vencimientoMatricula: e.target.value })}
+                  className={inputClass} style={inputStyle}
+                  onFocus={inputFocus} onBlur={inputBlur} />
+              </div>
+            </div>
+          </div>
+
           <button onClick={handleAgregarSocio} disabled={guardando}
-            className="mt-5 px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+            className="px-8 py-3 rounded-xl text-sm font-semibold text-white transition-all"
             style={{ backgroundColor: guardando ? "#86b89a" : "#157f3c" }}>
             {guardando ? "Guardando..." : "✓ Registrar socio"}
           </button>
@@ -143,17 +419,38 @@ function ListaSocios({
         </div>
       )}
 
+{/* Buscador */}
+      {!verCuotas && (
+        <div className="mb-4">
+          <input
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="🔍 Buscar por nombre, CI o placa..."
+            className="w-full px-4 py-2.5 rounded-xl text-sm outline-none transition"
+            style={{
+              backgroundColor: "#f3f4f6",
+              border: "1.5px solid #e5e7eb",
+              color: "#111827",
+            }}
+            onFocus={(e) => e.target.style.borderColor = "#157f3c"}
+            onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
+          />
+        </div>
+      )}
+
       {cargando ? (
         <p className="text-sm" style={{ color: "#9ca3af" }}>Cargando socios...</p>
-      ) : lista.length === 0 ? (
+      ) : listaFiltrada.length === 0 ? (
         <div className="text-center py-16 rounded-2xl"
           style={{ backgroundColor: "#ffffff", border: "1px dashed #d1d5db" }}>
-          <p className="text-3xl mb-2">👥</p>
-          <p className="text-sm" style={{ color: "#9ca3af" }}>No hay socios en esta línea aún</p>
+          <p className="text-3xl mb-2">🔍</p>
+          <p className="text-sm" style={{ color: "#9ca3af" }}>
+            {busqueda ? `Sin resultados para "${busqueda}"` : "No hay socios en esta línea aún"}
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
-          {lista.map((socio) => (
+          {listaFiltrada.map((socio) => (
             <div key={socio.id}
               className="rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:shadow-md transition-all"
               style={{ backgroundColor: "#ffffff", border: "1px solid #e5e7eb" }}>
@@ -178,10 +475,15 @@ function ListaSocios({
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
+                <button onClick={() => window.location.href = `/socio/${socio.id}`}
+                  className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white"
+                  style={{ backgroundColor: "#157f3c" }}>
+                  📋 Kardex
+                </button>
                 <button onClick={() => handleVerCuotas(socio)}
                   className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white"
                   style={{ backgroundColor: "#f59e0b" }}>
-                  💰 Cuotas
+                  💰 Flujo
                 </button>
                 <button
                   onClick={() => handleEstadoSocio(socio.id, socio.estado === "activo" ? "suspendido" : "activo")}
@@ -211,7 +513,36 @@ export default function Administracion() {
   const [verCuotas, setVerCuotas] = useState(false);
 
   const [formSocio, setFormSocio] = useState({
-    nombre: "", ci: "", placa: "", telefono: "", linea: "interprovincial",
+    // Datos personales
+    nombre: "",
+    fechaNacimiento: "",
+    ci: "",
+    ciExpedicion: "CB",
+    telefono: "",
+    telefonoEmergencia: "",
+    direccion: "",
+    // Licencia
+    licenciaNumero: "",
+    licenciaClase: "B",
+    licenciaCategoria: "profesional",
+    licenciaEmision: "",
+    licenciaVencimiento: "",
+    // Vehículo ficha técnica
+    placa: "",
+    vin: "",
+    marca: "",
+    modelo: "",
+    anio: "",
+    color: "",
+    tipoCombustible: "gasolina",
+    numeroMotor: "",
+    numeroChassis: "",
+    // Vehículo documentación
+    vencimientoSOAT: "",
+    vencimientoRevisionTecnica: "",
+    vencimientoMatricula: "",
+    // Sistema
+    linea: "interprovincial",
   });
   const [formCaja, setFormCaja] = useState({ tipo: "ingreso", descripcion: "", monto: "" });
   const [formCuota, setFormCuota] = useState({ mes: "", monto: "", pagado: true });
@@ -258,7 +589,7 @@ export default function Administracion() {
 
   const handleVerCuotas = async (socio) => {
     setSocioSeleccionado(socio);
-    const cuotas = await obtenerCuotas(socio.id);
+    const cuotas = await obtenerMovimientosSocio(socio.id);
     setCuotasSocio(cuotas);
     setVerCuotas(true);
   };
@@ -266,7 +597,7 @@ export default function Administracion() {
   const handleRegistrarCuota = async () => {
     if (!formCuota.mes || !formCuota.monto) { alert("Mes y monto son obligatorios"); return; }
     setGuardando(true);
-    await registrarCuota({
+    await registrarMovimientoSocio({
       socioId: socioSeleccionado.id,
       socioNombre: socioSeleccionado.nombre,
       mes: formCuota.mes,
@@ -274,7 +605,7 @@ export default function Administracion() {
       pagado: formCuota.pagado,
     });
     setFormCuota({ mes: "", monto: "", pagado: true });
-    const cuotas = await obtenerCuotas(socioSeleccionado.id);
+    const cuotas = await obtenerMovimientosSocio(socioSeleccionado.id);
     setCuotasSocio(cuotas);
     setGuardando(false);
   };

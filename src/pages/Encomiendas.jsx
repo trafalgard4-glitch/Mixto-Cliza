@@ -15,6 +15,9 @@ export default function Encomiendas() {
   const [cargando, setCargando] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [filtroFecha, setFiltroFecha] = useState("hoy");
+  const [busqueda, setBusqueda] = useState("");
+  const [modalConfirm, setModalConfirm] = useState(null);
   const [form, setForm] = useState({
     remitente: "", telefonoRemitente: "",
     destinatario: "", telefonoDestinatario: "",
@@ -30,6 +33,32 @@ export default function Encomiendas() {
     setChoferes(c.filter((c) => c.estado === "DISPONIBLE"));
     setCargando(false);
   };
+
+const encomiendaFiltradas = encomiendas.filter((enc) => {
+    // Filtro por búsqueda
+    const q = busqueda.toLowerCase();
+    const coincideBusqueda =
+      !busqueda ||
+      enc.codigo?.toLowerCase().includes(q) ||
+      enc.remitente?.toLowerCase().includes(q) ||
+      enc.destinatario?.toLowerCase().includes(q);
+
+    // Filtro por fecha
+    if (!enc.fechaRegistro) return coincideBusqueda;
+    const fecha = enc.fechaRegistro.toDate ? enc.fechaRegistro.toDate() : new Date(enc.fechaRegistro);
+    const hoy = new Date();
+    const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+    const inicioSemana = new Date(inicioHoy);
+    inicioSemana.setDate(inicioHoy.getDate() - hoy.getDay());
+    const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+    let coincideFecha = true;
+    if (filtroFecha === "hoy") coincideFecha = fecha >= inicioHoy;
+    else if (filtroFecha === "semana") coincideFecha = fecha >= inicioSemana;
+    else if (filtroFecha === "mes") coincideFecha = fecha >= inicioMes;
+
+    return coincideBusqueda && coincideFecha;
+  });
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -69,13 +98,13 @@ export default function Encomiendas() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-xl font-bold" style={{ color: "#111827" }}>
             📦 Encomiendas
           </h2>
           <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>
-            {encomiendas.length} encomiendas registradas
+            {encomiendaFiltradas.length} de {encomiendas.length} encomiendas
           </p>
         </div>
         <button
@@ -87,7 +116,90 @@ export default function Encomiendas() {
         </button>
       </div>
 
+      {/* Filtros */}
+      <div className="flex flex-col md:flex-row gap-3 mb-6">
+        <input
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="🔍 Buscar por código, remitente o destinatario..."
+          className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none transition"
+          style={{
+            backgroundColor: "#ffffff",
+            border: "1.5px solid #e5e7eb",
+            color: "#111827",
+          }}
+          onFocus={(e) => e.target.style.borderColor = "#157f3c"}
+          onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
+        />
+        <div className="flex gap-2">
+          {[
+            { id: "hoy", label: "Hoy" },
+            { id: "semana", label: "Semana" },
+            { id: "mes", label: "Mes" },
+            { id: "todos", label: "Todos" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFiltroFecha(f.id)}
+              className="px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+              style={{
+                backgroundColor: filtroFecha === f.id ? "#157f3c" : "#ffffff",
+                color: filtroFecha === f.id ? "#ffffff" : "#374151",
+                border: filtroFecha === f.id ? "none" : "1px solid #e5e7eb",
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Formulario */}
+      {/* Resumen del día */}
+      {filtroFecha === "hoy" && !mostrarForm && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          {[
+            {
+              label: "Total hoy",
+              valor: encomiendaFiltradas.length,
+              bg: "#f0fdf4", color: "#157f3c", border: "#86efac",
+              icono: "📦"
+            },
+            {
+              label: "En oficina",
+              valor: encomiendaFiltradas.filter(e => e.estado === "EN_OFICINA").length,
+              bg: "#fef9c3", color: "#854d0e", border: "#fde047",
+              icono: "🏠"
+            },
+            {
+              label: "En ruta",
+              valor: encomiendaFiltradas.filter(e => e.estado === "EN_RUTA").length,
+              bg: "#dbeafe", color: "#1e40af", border: "#93c5fd",
+              icono: "🚗"
+            },
+            {
+              label: "Recaudado",
+              valor: `Bs. ${encomiendaFiltradas
+                .filter(e => e.quienPaga === "remitente")
+                .reduce((acc, e) => acc + (e.precio || 0), 0)}`,
+              bg: "#f5f3ff", color: "#7c3aed", border: "#c4b5fd",
+              icono: "💰"
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl p-4 text-center"
+              style={{ backgroundColor: stat.bg, border: `1px solid ${stat.border}` }}
+            >
+              <p className="text-xl mb-1">{stat.icono}</p>
+              <p className="text-xl font-black" style={{ color: stat.color }}>
+                {stat.valor}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "#6b7280" }}>{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
       {mostrarForm && (
         <div
           className="rounded-2xl p-6 mb-6 shadow-sm"
@@ -170,20 +282,24 @@ export default function Encomiendas() {
         <div className="text-center py-12" style={{ color: "#9ca3af" }}>
           Cargando encomiendas...
         </div>
-      ) : encomiendas.length === 0 ? (
+      ) : encomiendaFiltradas.length === 0 ? (
         <div
           className="text-center py-16 rounded-2xl"
           style={{ backgroundColor: "#ffffff", border: "1px dashed #d1d5db" }}
         >
           <p className="text-4xl mb-3">📦</p>
-          <p className="font-medium" style={{ color: "#374151" }}>Sin encomiendas aún</p>
+          <p className="font-medium" style={{ color: "#374151" }}>
+            {busqueda || filtroFecha !== "todos" ? "Sin resultados" : "Sin encomiendas aún"}
+          </p>
           <p className="text-sm mt-1" style={{ color: "#9ca3af" }}>
-            Registra la primera encomienda del día
+            {busqueda ? `No hay resultados para "${busqueda}"` : 
+             filtroFecha !== "todos" ? "No hay encomiendas en este período" :
+             "Registra la primera encomienda del día"}
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {encomiendas.map((enc) => (
+          {encomiendaFiltradas.map((enc) => (
             <div
               key={enc.id}
               className="rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all hover:shadow-md"
@@ -232,9 +348,14 @@ export default function Encomiendas() {
                 {enc.estado !== "ENTREGADO" && (
                   <select
                     value={enc.estado}
-                    onChange={async (e) => {
-                      await actualizarEstado(enc.id, e.target.value, enc.choferAsignado?.id);
-                      cargarDatos();
+                    onChange={(e) => {
+                      const nuevoEstado = e.target.value;
+                      if (nuevoEstado === "ENTREGADO") {
+                        setModalConfirm({ enc, nuevoEstado });
+                      } else {
+                        actualizarEstado(enc.id, nuevoEstado, enc.choferAsignado?.id)
+                          .then(cargarDatos);
+                      }
                     }}
                     className="text-xs px-2 py-1.5 rounded-xl outline-none"
                     style={{
@@ -248,6 +369,75 @@ export default function Encomiendas() {
                     <option value="ENTREGADO">Entregado</option>
                   </select>
                 )}
+                {/* Modal confirmación entrega */}
+      {modalConfirm && (
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)", zIndex: 9999 }}
+        >
+          <div
+            className="rounded-3xl shadow-2xl w-full max-w-sm p-6"
+            style={{ backgroundColor: "#ffffff" }}
+          >
+            <div className="text-center mb-5">
+              <div
+                className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4"
+                style={{ backgroundColor: "#f0fdf4" }}
+              >
+                ✅
+              </div>
+              <h3 className="text-lg font-bold" style={{ color: "#111827" }}>
+                Confirmar entrega
+              </h3>
+              <p className="text-sm mt-2" style={{ color: "#6b7280" }}>
+                ¿Estás seguro que la encomienda
+              </p>
+              <p
+                className="font-mono font-bold text-sm mt-1"
+                style={{ color: "#157f3c" }}
+              >
+                {modalConfirm.enc.codigo}
+              </p>
+              <p className="text-sm mt-1" style={{ color: "#6b7280" }}>
+                fue entregada a{" "}
+                <span className="font-semibold" style={{ color: "#111827" }}>
+                  {modalConfirm.enc.destinatario}
+                </span>
+                ?
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setModalConfirm(null)}
+                className="py-3 rounded-2xl text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: "#f3f4f6",
+                  color: "#374151",
+                  border: "1px solid #e5e7eb",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  await actualizarEstado(
+                    modalConfirm.enc.id,
+                    modalConfirm.nuevoEstado,
+                    modalConfirm.enc.choferAsignado?.id
+                  );
+                  setModalConfirm(null);
+                  cargarDatos();
+                }}
+                className="py-3 rounded-2xl text-sm font-semibold text-white transition-all"
+                style={{ backgroundColor: "#157f3c" }}
+              >
+                ✅ Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
               </div>
             </div>
           ))}

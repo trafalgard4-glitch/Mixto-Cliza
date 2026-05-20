@@ -2,23 +2,18 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./firebase/config";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Rastreo from "./pages/Rastreo";
 import ChoferApp from "./pages/ChoferApp";
+import Kardex from "./pages/Kardex";
 
-function App() {
+function AppContent() {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
 
-  const esRastreo = window.location.pathname === "/rastreo";
-const esChofer = window.location.pathname === "/chofer";
-
   useEffect(() => {
-    if (esRastreo) {
-      setCargando(false);
-      return;
-    }
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const docRef = doc(db, "usuarios", user.uid);
@@ -34,20 +29,34 @@ const esChofer = window.location.pathname === "/chofer";
       setCargando(false);
     });
     return () => unsub();
-  }, [esRastreo]);
-
-  if (esRastreo) return <Rastreo />;
-if (esChofer) return <ChoferApp />;
+  }, []);
 
   if (cargando) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">Cargando...</p>
+        <p style={{ color: "#9ca3af" }}>Cargando...</p>
       </div>
     );
   }
 
-  return usuario ? <Dashboard usuario={usuario} /> : <Login />;
+  return (
+    <Routes>
+      <Route path="/rastreo" element={<Rastreo />} />
+      <Route path="/chofer" element={<ChoferApp />} />
+      <Route path="/socio/:id" element={<Kardex />} />
+      <Route path="*" element={
+        usuario ? <Dashboard usuario={usuario} /> : <Login />
+      } />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
 }
 
 export default App;

@@ -1,7 +1,7 @@
 import { db } from "./config";
 import {
   collection, addDoc, getDocs, updateDoc,
-  doc, query, orderBy, serverTimestamp, where
+  doc, query, orderBy, serverTimestamp, where, getDoc
 } from "firebase/firestore";
 
 // ═══════════════════════════════
@@ -12,6 +12,12 @@ export async function obtenerSocios() {
   const q = query(collection(db, "socios"), orderBy("nombre"));
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function obtenerSocio(id) {
+  const snap = await getDoc(doc(db, "socios", id));
+  if (!snap.exists()) return null;
+  return { id: snap.id, ...snap.data() };
 }
 
 export async function agregarSocio(datos) {
@@ -27,23 +33,23 @@ export async function actualizarSocio(id, datos) {
 }
 
 // ═══════════════════════════════
-// CUOTAS
+// FLUJO FINANCIERO DEL SOCIO
 // ═══════════════════════════════
 
-export async function obtenerCuotas(socioId) {
+export async function obtenerMovimientosSocio(socioId) {
   const q = query(
-    collection(db, "cuotas"),
-    where("socioId", "==", socioId)
+    collection(db, "movimientosSocio"),
+    where("socioId", "==", socioId),
+    orderBy("fecha", "desc")
   );
   const snap = await getDocs(q);
-  const cuotas = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  return cuotas.sort((a, b) => b.mes.localeCompare(a.mes));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function registrarCuota(datos) {
-  await addDoc(collection(db, "cuotas"), {
+export async function registrarMovimientoSocio(datos) {
+  await addDoc(collection(db, "movimientosSocio"), {
     ...datos,
-    fechaPago: serverTimestamp(),
+    fecha: serverTimestamp(),
   });
 }
 
@@ -51,11 +57,17 @@ export async function registrarCuota(datos) {
 // CAJA
 // ═══════════════════════════════
 
-export async function obtenerMovimientosCaja() {
-  const q = query(
-    collection(db, "caja"),
-    orderBy("fecha", "desc")
-  );
+export async function obtenerMovimientosCaja(categoria) {
+  let q;
+  if (categoria) {
+    q = query(
+      collection(db, "caja"),
+      where("categoria", "==", categoria),
+      orderBy("fecha", "desc")
+    );
+  } else {
+    q = query(collection(db, "caja"), orderBy("fecha", "desc"));
+  }
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
